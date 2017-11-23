@@ -82,7 +82,13 @@ class Glove:
     def embedding(self, texts, maxlen=0):
         """Get embedded representation of tokens.
 
-        :param texts:
+        :param texts: 2D array.  Each row is a list of words, and they need
+            not to have the same length.
+        :param maxlen: Sentences that are longer than maxlen will be
+            truncated, shorter ones will be padded.  If 0, maxlen is set to
+            the max length of all the input sentences.
+
+        :returns: 3D array, [N, maxlen, D], D is the embedding dimension.
         """
         if 0 == maxlen:
             maxlen = len(max(texts, key=len))
@@ -106,6 +112,18 @@ class Glove:
         return vec
 
     def reverse_embedding(self, vecs, k=3, embedding=True, n_process=-1):
+        """Lookup nearest tokens given an embeddings.
+
+        :param vecs: 3D array, [N, maxlen, D], N is the number of sentences,
+            maxlen is maxlen for each sentences, D is the embedding dimension
+            (fixed to 300).
+        :param k: int, number of nearest tokens to return.
+        :param embedding: bool, return embeddings as well if True.
+        :param n_process: int, number of processes to spawn at the same time.
+            If negative, spawn at most 8 processes.
+
+        :returns: 4D array, [N, maxlen, k, D].
+        """
         import multiprocessing
         from multiprocessing import Process
 
@@ -163,6 +181,8 @@ class Glove:
 
 
 def _worker(vecs, k, modelpath, curid, retval):
+    """Worker to search for nearest embeddings.
+    """
     cur = current_process()
     print('\n{} loading knn'.format(cur.name))
     knn = joblib.load(modelpath)
